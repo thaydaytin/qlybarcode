@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Game trắc nghiệm có tính điểm</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: url("background.jpg") no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      background-color: rgba(255,255,255,0.9);
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    .choice-btn {
+      width: 80%;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .choice-btn:hover {
+      background-color: #388E3C;
+    }
+    #result, #timer {
+      font-size: 18px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="startScreen">
+    <h2>🎮 Bắt đầu trò chơi</h2>
+    <input type="text" id="studentName" placeholder="Nhập tên của bạn" style="padding:10px;width:80%">
+    <br><br>
+    <button onclick="startGame()">Bắt đầu</button>
+  </div>
+
+  <div class="container" id="gameScreen" style="display:none;">
+    <div id="questionBox">
+      <h3 id="question"></h3>
+      <div id="choices"></div>
+      <div id="timer">⏱️ 10</div>
+      <div id="result"></div>
+    </div>
+  </div>
+
+  <div class="container" id="endScreen" style="display:none;">
+    <h2>🎉 Hoàn thành!</h2>
+    <p id="finalScore"></p>
+  </div>
+
+  <script>
+    let questions = [];
+    let current = 0;
+    let totalScore = 0;
+    let timer;
+    let timeLeft = 10;
+    let startTime;
+    let student = '';
+
+    fetch('questions.json')
+      .then(res => res.json())
+      .then(data => questions = data);
+
+    function startGame() {
+      student = document.getElementById("studentName").value.trim();
+      if (student === "") {
+        alert("Vui lòng nhập tên!");
+        return;
+      }
+      document.getElementById("startScreen").style.display = "none";
+      document.getElementById("gameScreen").style.display = "block";
+      showQuestion();
+    }
+
+    function showQuestion() {
+      if (current >= questions.length) {
+        finishGame();
+        return;
+      }
+
+      let q = questions[current];
+      document.getElementById("question").innerText = `Câu ${current + 1}: ${q.question}`;
+      let choiceDiv = document.getElementById("choices");
+      choiceDiv.innerHTML = '';
+      q.choices.forEach((choice, idx) => {
+        let btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.innerText = `${String.fromCharCode(65 + idx)}. ${choice}`;
+        btn.onclick = () => checkAnswer(idx);
+        choiceDiv.appendChild(btn);
+      });
+
+      document.getElementById("result").innerText = '';
+      timeLeft = 10;
+      document.getElementById("timer").innerText = `⏱️ ${timeLeft}`;
+      startTime = new Date();
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      document.getElementById("timer").innerText = `⏱️ ${timeLeft}`;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        document.getElementById("result").innerText = "⏳ Hết giờ!";
+        setTimeout(() => {
+          current++;
+          showQuestion();
+        }, 1000);
+      }
+    }
+
+    function checkAnswer(selected) {
+      clearInterval(timer);
+      let q = questions[current];
+      let isCorrect = selected === q.answer;
+      let now = new Date();
+      let secondsUsed = Math.round((now - startTime) / 1000);
+      let score = isCorrect ? Math.max(0, 10 - secondsUsed) : 0;
+      totalScore += score;
+
+      document.getElementById("result").innerText = isCorrect ? `✅ Đúng! +${score} điểm` : "❌ Sai!";
+      setTimeout(() => {
+        current++;
+        showQuestion();
+      }, 1000);
+    }
+
+    function finishGame() {
+      document.getElementById("gameScreen").style.display = "none";
+      document.getElementById("endScreen").style.display = "block";
+      document.getElementById("finalScore").innerText = `Tên: ${student} | Tổng điểm: ${totalScore}`;
+      sendToGoogleSheet(student, totalScore);
+    }
+
+    // Gửi dữ liệu về Google Sheet (phần 2 ở dưới)
+    function sendToGoogleSheet(name, score) {
+      fetch('https://script.google.com/macros/s/AKfycbw9-0JR-MN11X4bcxt4m2Rt0WizZNsMlJh3a-foc6e2loq5p8v5sy8o_DsfTtCwmNLcZQ/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, score: score, timestamp: new Date().toISOString()})
+      });
+    }
+  </script>
+</body>
+</html>
