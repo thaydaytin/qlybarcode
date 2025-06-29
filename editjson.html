@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Chỉnh sửa câu hỏi JSON</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+    }
+    .question-block {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin: 4px 0;
+    }
+    button {
+      margin: 5px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+    .actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🛠️ Chỉnh sửa Câu hỏi - JSON</h2>
+  <div id="editor"></div>
+  <div class="actions">
+    <button onclick="addQuestion()">➕ Thêm câu hỏi mới</button>
+    <button onclick="downloadJSON()">💾 Tải xuống JSON</button>
+  </div>
+
+  <script>
+    let questions = [];
+
+    fetch("questions.json")
+      .then(res => res.json())
+      .then(data => {
+        questions = data;
+        renderEditor();
+      });
+
+    function renderEditor() {
+      const editor = document.getElementById("editor");
+      editor.innerHTML = "";
+      questions.forEach((q, i) => {
+        const block = document.createElement("div");
+        block.className = "question-block";
+
+        block.innerHTML = `
+          <label><strong>Câu hỏi ${i + 1}:</strong></label>
+          <input type="text" value="${q.question}" onchange="questions[${i}].question = this.value">
+
+          <div class="choices">
+            ${q.choices.map((choice, j) => `
+              <input type="text" value="${choice}" onchange="questions[${i}].choices[${j}] = this.value" placeholder="Đáp án ${j + 1}">
+            `).join('')}
+          </div>
+
+          <label>✅ Vị trí đáp án đúng (0-3):</label>
+          <input type="number" min="0" max="3" value="${q.answer}" onchange="questions[${i}].answer = parseInt(this.value)">
+
+          <div style="text-align: right">
+            <button onclick="deleteQuestion(${i})">🗑️ Xoá câu hỏi</button>
+          </div>
+        `;
+
+        editor.appendChild(block);
+      });
+    }
+
+    function deleteQuestion(index) {
+      if (confirm("Bạn có chắc muốn xoá câu hỏi này?")) {
+        questions.splice(index, 1);
+        renderEditor();
+      }
+    }
+
+    function addQuestion() {
+      questions.push({
+        question: "",
+        choices: ["", "", "", ""],
+        answer: 0
+      });
+      renderEditor();
+    }
+
+    function downloadJSON() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(questions, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "questions.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+  </script>
+</body>
+</html>
