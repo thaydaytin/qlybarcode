@@ -1,342 +1,49 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Sản phẩm</title>
-    <!-- Tải Tailwind CSS cho styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tải thư viện jsQR để quét mã QR/Barcode -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-        }
-        .container {
-            max-width: 600px;
-        }
-        video {
-            width: 100%;
-            height: auto;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            background-color: #000;
-        }
-        canvas {
-            display: none; /* Canvas dùng để xử lý hình ảnh từ video, không cần hiển thị */
-        }
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #cbd5e0;
-            border-radius: 8px;
-            box-sizing: border-box;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .form-input:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-        }
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: background-color 0.2s, transform 0.1s;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #4338ca;
-            transform: translateY(-1px);
-        }
-        .btn-secondary {
-            background-color: #6b7280;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background-color: #4b5563;
-            transform: translateY(-1px);
-        }
-        .alert {
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
-            margin-top: 16px;
-        }
-        .alert-success {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        .alert-error {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .hidden {
-            display: none !important;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center py-8">
-    <div class="container bg-white p-8 rounded-xl shadow-lg border border-gray-200 text-gray-800 mx-4">
-        <h1 class="text-3xl font-bold text-center mb-6 text-indigo-700">Quản lý Sản phẩm đã bán</h1>
+<body>
+<script>
+async function run() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
 
-        <div class="space-y-4 mb-6">
-            <div>
-                <label for="buyerName" class="block text-sm font-medium text-gray-700 mb-1">Tên người mua:</label>
-                <input type="text" id="buyerName" class="form-input" placeholder="Nhập tên người mua" required>
-            </div>
-            <div>
-                <label for="purchaseDate" class="block text-sm font-medium text-gray-700 mb-1">Ngày mua:</label>
-                <input type="date" id="purchaseDate" class="form-input" required>
-            </div>
-            <div>
-                <label for="barcodeValue" class="block text-sm font-medium text-gray-700 mb-1">Mã sản phẩm (QR/Barcode):</label>
-                <input type="text" id="barcodeValue" class="form-input bg-gray-50 cursor-not-allowed" placeholder="Mã sẽ xuất hiện tại đây sau khi quét" readonly>
-            </div>
-        </div>
+    if (!id) {
+        document.body.innerHTML = "<h2>Thiếu tham số id</h2>";
+        return;
+    }
 
-        <div class="flex flex-col items-center justify-center space-y-4 mb-6">
-            <video id="video" class="hidden"></video>
-            <canvas id="canvas" class="hidden"></canvas>
-            <div id="loadingMessage" class="text-indigo-600 text-center font-medium hidden">Đang tải camera...</div>
-            <div id="errorMessage" class="alert alert-error hidden"></div>
-            <div id="outputMessage" class="text-center text-gray-600 font-medium my-2 hidden"></div>
+    const sheetID = "1FGKzqES1frfpqBJJySkFFd5nlQ6voXHYiQJvp-5stm0";
 
-            <button id="scanButton" class="btn btn-secondary w-full">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                Bắt đầu Quét QR/Barcode
-            </button>
-        </div>
+    const apiURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
 
-        <button id="submitButton" class="btn btn-primary w-full mt-4" disabled>
-            <span id="submitButtonText">Lưu dữ liệu vào Google Sheet</span>
-            <div id="submitSpinner" class="spinner hidden"></div>
-        </button>
+    try {
+        const response = await fetch(apiURL);
+        let text = await response.text();
 
-        <div id="statusMessage" class="alert hidden"></div>
-    </div>
+        text = text.substr(47).slice(0, -2);
+        const data = JSON.parse(text);
 
-    <script>
-        // *** ĐỊA CHỈ GOOGLE APPS SCRIPT CỦA BẠN SẼ Ở ĐÂY ***
-        // Bạn cần thay thế placeholder này bằng URL triển khai Apps Script của bạn.
-        // Xem phần hướng dẫn bên dưới để biết cách lấy URL này.
-        const GOOGLE_APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
+        const rows = data.table.rows;
 
-        const video = document.getElementById('video');
-        const canvasElement = document.getElementById('canvas');
-        const canvasContext = canvasElement.getContext('2d');
-        const barcodeValueInput = document.getElementById('barcodeValue');
-        const buyerNameInput = document.getElementById('buyerName');
-        const purchaseDateInput = document.getElementById('purchaseDate');
-        const scanButton = document.getElementById('scanButton');
-        const submitButton = document.getElementById('submitButton');
-        const submitButtonText = document.getElementById('submitButtonText');
-        const submitSpinner = document.getElementById('submitSpinner');
-        const loadingMessage = document.getElementById('loadingMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        const statusMessage = document.getElementById('statusMessage');
-        const outputMessage = document.getElementById('outputMessage');
+        const found = rows.find(row => row.c[0]?.v === id);
 
-        let scanning = false;
-        let stream = null;
-
-        // Hàm để lấy ngày hiện tại và định dạng yyyy-MM-dd
-        function getCurrentDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Tháng bắt đầu từ 0
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        if (found) {
+            const redirectURL = found.c[1].v;
+            window.location.href = redirectURL;
+        } else {
+            document.body.innerHTML = "<h3>ID không tồn tại!</h3>";
         }
 
-        // Tự động điền ngày hiện tại vào input
-        purchaseDateInput.value = getCurrentDate();
+    } catch (e) {
+        document.body.innerHTML = "<h3>Lỗi tải dữ liệu!</h3>";
+        console.error(e);
+    }
+}
 
-        // Kiểm tra xem các trường input đã đầy đủ chưa để bật/tắt nút submit
-        function checkFormValidity() {
-            const isValid = buyerNameInput.value.trim() !== '' &&
-                            purchaseDateInput.value.trim() !== '' &&
-                            barcodeValueInput.value.trim() !== '';
-            submitButton.disabled = !isValid;
-        }
-
-        buyerNameInput.addEventListener('input', checkFormValidity);
-        purchaseDateInput.addEventListener('input', checkFormValidity);
-        barcodeValueInput.addEventListener('input', checkFormValidity); // Cần thiết nếu mã barcode được nhập thủ công
-
-        // Hàm hiển thị thông báo
-        function showMessage(element, text, type) {
-            element.textContent = text;
-            element.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
-            element.classList.remove('hidden');
-            // Tự động ẩn sau 5 giây
-            setTimeout(() => {
-                element.classList.add('hidden');
-            }, 5000);
-        }
-
-        // Hàm bắt đầu quét QR/Barcode
-        async function startScanning() {
-            scanning = true;
-            barcodeValueInput.value = ''; // Xóa mã cũ khi bắt đầu quét mới
-            outputMessage.classList.add('hidden'); // Ẩn thông báo mã đã quét
-            errorMessage.classList.add('hidden'); // Ẩn lỗi cũ
-            loadingMessage.classList.remove('hidden'); // Hiện thông báo đang tải camera
-            video.classList.add('hidden'); // Ẩn video cho đến khi camera sẵn sàng
-
-            try {
-                // Yêu cầu quyền truy cập camera
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true); // Quan trọng cho iOS
-                await video.play();
-
-                loadingMessage.classList.add('hidden'); // Ẩn thông báo tải camera
-                video.classList.remove('hidden'); // Hiện video
-
-                requestAnimationFrame(tick); // Bắt đầu vòng lặp quét
-                scanButton.textContent = 'Dừng Quét';
-                scanButton.classList.remove('btn-secondary');
-                scanButton.classList.add('btn-error', 'bg-red-600', 'hover:bg-red-700'); // Đổi màu nút khi đang quét
-            } catch (err) {
-                console.error("Lỗi khi truy cập camera:", err);
-                errorMessage.textContent = 'Không thể truy cập camera. Vui lòng cấp quyền truy cập.';
-                errorMessage.classList.remove('hidden');
-                loadingMessage.classList.add('hidden');
-                scanning = false; // Đảm bảo scanning là false nếu lỗi
-            }
-        }
-
-        // Hàm dừng quét
-        function stopScanning() {
-            scanning = false;
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
-            }
-            video.classList.add('hidden');
-            loadingMessage.classList.add('hidden');
-            scanButton.textContent = 'Bắt đầu Quét QR/Barcode';
-            scanButton.classList.add('btn-secondary');
-            scanButton.classList.remove('btn-error', 'bg-red-600', 'hover:bg-red-700');
-        }
-
-        // Vòng lặp quét
-        function tick() {
-            if (!scanning) return;
-
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvasElement.height = video.videoHeight;
-                canvasElement.width = video.videoWidth;
-                canvasContext.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-                const imageData = canvasContext.getImageData(0, 0, canvasElement.width, canvasElement.height);
-                
-                // Sử dụng jsQR để quét mã
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
-
-                if (code) {
-                    barcodeValueInput.value = code.data;
-                    outputMessage.textContent = `Đã quét: ${code.data}`;
-                    outputMessage.classList.remove('hidden');
-                    stopScanning(); // Dừng quét sau khi tìm thấy mã
-                    checkFormValidity(); // Kiểm tra lại trạng thái nút submit
-                }
-            }
-            requestAnimationFrame(tick);
-        }
-
-        // Sự kiện click nút quét
-        scanButton.addEventListener('click', () => {
-            if (scanning) {
-                stopScanning();
-            } else {
-                startScanning();
-            }
-        });
-
-        // Sự kiện click nút gửi dữ liệu
-        submitButton.addEventListener('click', async () => {
-            const buyerName = buyerNameInput.value.trim();
-            const purchaseDate = purchaseDateInput.value;
-            const barcodeValue = barcodeValueInput.value.trim();
-
-            if (!buyerName || !purchaseDate || !barcodeValue) {
-                showMessage(statusMessage, 'Vui lòng điền đầy đủ thông tin trước khi gửi.', 'error');
-                return;
-            }
-
-            // Hiển thị loading spinner và vô hiệu hóa nút
-            submitButton.disabled = true;
-            submitButtonText.classList.add('hidden');
-            submitSpinner.classList.remove('hidden');
-            statusMessage.classList.add('hidden'); // Ẩn thông báo cũ
-
-            try {
-                const response = await fetch("https://script.google.com/macros/s/AKfycbxvUuoO45tDPl24Eyuw0dUKuIPiQOEF88alHmuN_4ASrMH27n6MkD443aaO728cobeLqQ/exec", {
-                    method: 'POST',
-                    mode: 'no-cors', // Quan trọng cho Apps Script do không kiểm soát CORS header trực tiếp
-                    cache: 'no-cache',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded', // Định dạng dữ liệu gửi đi
-                    },
-                    body: new URLSearchParams({ // Gửi dữ liệu dưới dạng form-urlencoded
-                        buyerName: buyerName,
-                        purchaseDate: purchaseDate,
-                        barcode: barcodeValue
-                    }).toString()
-                });
-
-                // Lưu ý: Với mode: 'no-cors', bạn sẽ không thể đọc phản hồi (response.json()) trực tiếp.
-                // Việc kiểm tra thành công hay thất bại sẽ phải dựa vào việc Apps Script xử lý được request.
-                // Nếu Apps Script không báo lỗi, ta sẽ coi là thành công.
-                // Để có phản hồi chi tiết, bạn cần deploy Apps Script với chế độ cho phép phản hồi JSON
-                // và không dùng 'no-cors'. Nhưng 'no-cors' dễ triển khai hơn.
-
-                showMessage(statusMessage, 'Dữ liệu đã được gửi thành công!', 'success');
-                // Xóa các trường sau khi gửi thành công
-                buyerNameInput.value = '';
-                barcodeValueInput.value = '';
-                purchaseDateInput.value = getCurrentDate(); // Reset ngày về hiện tại
-                checkFormValidity(); // Vô hiệu hóa nút submit
-            } catch (error) {
-                console.error('Lỗi khi gửi dữ liệu:', error);
-                showMessage(statusMessage, 'Có lỗi xảy ra khi gửi dữ liệu. Vui lòng thử lại.', 'error');
-            } finally {
-                // Ẩn loading spinner và kích hoạt lại nút
-                submitButton.disabled = false;
-                submitButtonText.classList.remove('hidden');
-                submitSpinner.classList.add('hidden');
-            }
-        });
-
-        // Khởi tạo trạng thái nút submit khi tải trang
-        checkFormValidity();
-    </script>
+run();
+</script>
 </body>
 </html>
