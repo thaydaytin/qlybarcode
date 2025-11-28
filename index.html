@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QR Redirect & Generator</title>
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <title>QR Code Generator</title>
 
-  <!-- QR libraries -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
@@ -13,92 +14,110 @@
     body {
       font-family: Arial, sans-serif;
       background: #f1f5f9;
-      margin: 0;
-      padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
     }
+
     .logo {
       position: absolute;
       top: 15px;
       left: 15px;
       height: 55px;
+      width: auto;
       border-radius: 8px;
     }
     h1 {
       color: #2563eb;
       margin-bottom: 20px;
     }
-    h2 {
+	h2 {
       font-size: 1.2rem;
       color: #1565c0;
-      margin-bottom: 1px;
+      font-weight: 600;
+	  margin-bottom: 1px;
     }
     .input-box {
-      width: 30%;
-      min-width: 300px;
       display: flex;
       flex-direction: column;
+      width: 30%;
+	  min-width: 300px;
       gap: 10px;
       margin-bottom: 20px;
     }
+
     input, button {
       padding: 10px;
       font-size: 16px;
       border-radius: 8px;
       border: 1px solid #cbd5e1;
     }
+
     button {
       background: #2563eb;
       color: white;
       cursor: pointer;
+      transition: 0.2s;
     }
+
     button:hover {
       background: #1e40af;
     }
 
+    /* Frame (compact and proportional) */
     #qrcode-frame {
       display: none;
       width: 240px;
       height: 280px;
-      padding: 10px;
       background: white;
-      border-radius: 16px;
       border: 5px solid #2563eb;
+      border-radius: 16px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
     }
-    #qrcode { margin-bottom: 5px; }
+
+    #qrcode {
+      margin-bottom: 5px;
+    }
+
     #qrcode-name {
       font-weight: bold;
+      font-size: 16px;
       color: #374151;
+      margin-top: 5px;
     }
+
     #download-btn {
       display: none;
       margin-top: 15px;
       background: #16a34a;
     }
+
     #download-btn:hover {
       background: #15803d;
     }
   </style>
 </head>
 <body>
-
-<img src="logo.png" class="logo">
-
-<!-- Nội dung QR Generator -->
-<div id="qr-generator" style="display:none;">
+<!-- ✅ Chèn logo của thầy ở đây -->
+  <img src="logo.png" alt="Logo của Thaydaytin" class="logo">
+  
   <h1>Trình Tạo Mã QR</h1>
 
   <div class="input-box">
-    <h2>Nhập nội dung cần tạo mã QR:</h2>
-    <input type="text" id="qr-content" placeholder="Nhập link, văn bản..." />
-    <h2>Đặt tên cho mã QR:</h2>
-    <input type="text" id="qr-name" placeholder="Có thể để trống" />
+	<h2>Nhập nội dung cần tạo mã QR:</h2>
+    <input type="text" id="qr-content" placeholder="Nhập link gg drive, website hay văn bản bất kì cần tạo mã QR" />
+	<h2>Đặt tên cho mã QR:</h2>
+    <input type="text" id="qr-name" placeholder="Có thể để trống nếu không cần tên" />
     <button onclick="generateQR()">Tạo mã QR</button>
   </div>
 
@@ -108,94 +127,115 @@
   </div>
 
   <button id="download-btn" onclick="downloadQR()">Tải về</button>
-</div>
 
-<script>
-/* =============================
+  <script>
+  
+  /* =============================
    1. KIỂM TRA THAM SỐ ID
-============================= */
-async function checkRedirect() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get("id");
+	============================= */
+	async function checkRedirect() {
+		const urlParams = new URLSearchParams(window.location.search);
+		const id = urlParams.get("id");
 
-    if (!id) {
-        document.getElementById("qr-generator").style.display = "block";
+		if (!id) {
+			document.getElementById("qr-generator").style.display = "block";
+			return;
+		}
+
+		const sheetID = "1FGKzqES1frfpqBJJySkFFd5nlQ6voXHYiQJvp-5stm0";
+		const apiURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+
+		try {
+			const response = await fetch(apiURL);
+			let text = await response.text();
+			text = text.substr(47).slice(0, -2);
+
+			const data = JSON.parse(text);
+			const rows = data.table.rows;
+
+			const match = rows.find(r => r.c[0]?.v === id);
+
+			if (match) {
+				window.location.href = match.c[1].v;
+			} else {
+				document.body.innerHTML = "<h2>ID không tồn tại!</h2>";
+			}
+		} catch (e) {
+			document.body.innerHTML = "<h2>Lỗi tải dữ liệu!</h2>";
+		}
+	}
+	checkRedirect();
+
+
+	/* =============================
+	   2. QR CODE GENERATOR
+	============================= */
+    let qr;
+
+    function generateQR() {
+      const content = document.getElementById("qr-content").value.trim();
+      const name = document.getElementById("qr-name").value.trim();
+
+      if (!content) {
+        alert("Hãy nhập vào nội dung cần tạo mã QR!");
         return;
+      }
+
+      const frame = document.getElementById("qrcode-frame");
+      const qrContainer = document.getElementById("qrcode");
+      const qrName = document.getElementById("qrcode-name");
+      const downloadBtn = document.getElementById("download-btn");
+
+      qrContainer.innerHTML = "";
+
+      // Larger QR code to fill frame
+      qr = new QRCode(qrContainer, {
+        text: content,
+        width: 220,
+        height: 220,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+      });
+
+      qrName.textContent = name || "";
+      frame.style.display = "flex";
+      downloadBtn.style.display = "inline-block";
+	  
+	  sendToSheet(content, name);
     }
 
-    const sheetID = "<1FGKzqES1frfpqBJJySkFFd5nlQ6voXHYiQJvp-5stm0>";
-    const apiURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+    async function downloadQR() {
+      const frame = document.getElementById("qrcode-frame");
+      const name = document.getElementById("qr-name").value.trim() || "qrcode";
 
-    try {
-        const response = await fetch(apiURL);
-        let text = await response.text();
-        text = text.substr(47).slice(0, -2);
+      const canvas = await html2canvas(frame, {
+        backgroundColor: "#ffffff",
+        scale: 3,
+      });
 
-        const data = JSON.parse(text);
-        const rows = data.table.rows;
-
-        const match = rows.find(r => r.c[0]?.v === id);
-
-        if (match) {
-            window.location.href = match.c[1].v;
-        } else {
-            document.body.innerHTML = "<h2>ID không tồn tại!</h2>";
-        }
-    } catch (e) {
-        document.body.innerHTML = "<h2>Lỗi tải dữ liệu!</h2>";
+      const link = document.createElement("a");
+      link.download = name + ".png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
     }
-}
-checkRedirect();
+	const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8w20YrKE-GMkV-Ai3HiYGAgYT8tMGJpG-oVi4VC8scHNe7godGj4O9sTgrhdCK8_9/exec";
 
-
-/* =============================
-   2. QR CODE GENERATOR
-============================= */
-
-let qr;
-
-function generateQR() {
-  const content = document.getElementById("qr-content").value.trim();
-  const name = document.getElementById("qr-name").value.trim();
-
-  if (!content) {
-    alert("Hãy nhập nội dung cần tạo mã QR!");
-    return;
-  }
-
-  const frame = document.getElementById("qrcode-frame");
-  const qrContainer = document.getElementById("qrcode");
-  const qrName = document.getElementById("qrcode-name");
-  const downloadBtn = document.getElementById("download-btn");
-
-  qrContainer.innerHTML = "";
-
-  qr = new QRCode(qrContainer, {
-    text: content,
-    width: 220,
-    height: 220,
-    colorDark: "#000",
-    colorLight: "#fff",
-  });
-
-  qrName.textContent = name || "";
-
-  frame.style.display = "flex";
-  downloadBtn.style.display = "inline-block";
-}
-
-async function downloadQR() {
-  const frame = document.getElementById("qrcode-frame");
-  const name = document.getElementById("qr-name").value.trim() || "qrcode";
-
-  const canvas = await html2canvas(frame, { backgroundColor: "#ffffff", scale: 3 });
-  const link = document.createElement("a");
-
-  link.download = name + ".png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
-</script>
-
+	async function sendToSheet(content, name) {
+	  try {
+		const response = await fetch(SCRIPT_URL, {
+		  method: "POST",
+		  mode: "no-cors",
+		  headers: { "Content-Type": "application/json" },
+		  body: JSON.stringify({
+			qrContent: content,
+			qrName: name
+		  }),
+		});
+		console.log("Data sent to Google Sheet successfully");
+	  } catch (err) {
+		console.error("Error sending data:", err);
+	  }
+	}
+  </script>
 </body>
 </html>
