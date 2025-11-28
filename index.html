@@ -110,7 +110,9 @@
 <body>
 <!-- ✅ Chèn logo của thầy ở đây -->
   <img src="logo.png" alt="Logo của Thaydaytin" class="logo">
-  
+  <h2 id="redirecting" style="display:none; margin-top:80px; color:#2563eb;">
+	  Đang chuyển hướng, vui lòng chờ...
+	</h2>
   <h1>Trình Tạo Mã QR</h1>
 
   <div class="input-box">
@@ -137,10 +139,20 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		const id = urlParams.get("id");
 
+		// Nếu không có id thì hiển thị giao diện tạo QR
 		if (!id) {
-			document.getElementById("qr-generator").style.display = "block";
+			document.querySelector("h1").style.display = "block";
+			document.querySelector(".input-box").style.display = "flex";
 			return;
 		}
+
+		// Ngược lại: có id → ẩn toàn bộ giao diện, chỉ hiện dòng chữ chuyển hướng
+		document.querySelector("h1").style.display = "none";
+		document.querySelector(".input-box").style.display = "none";
+		document.getElementById("qrcode-frame").style.display = "none";
+		document.getElementById("download-btn").style.display = "none";
+		document.getElementById("redirecting").style.display = "block";
+		document.querySelector(".logo").style.display = "none";
 
 		const sheetID = "1FGKzqES1frfpqBJJySkFFd5nlQ6voXHYiQJvp-5stm0";
 		const apiURL = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
@@ -148,7 +160,7 @@
 		try {
 			const response = await fetch(apiURL);
 			let text = await response.text();
-			text = text.substr(47).slice(0, -2);
+			text = text.substring(47).slice(0, -2);
 
 			const data = JSON.parse(text);
 			const rows = data.table.rows;
@@ -156,12 +168,15 @@
 			const match = rows.find(r => r.c[0]?.v === id);
 
 			if (match) {
-				window.location.href = match.c[1].v;
+				// Thêm delay nhỏ để chữ kịp hiển thị
+				setTimeout(() => {
+					window.location.href = match.c[1].v;
+				}, 500);
 			} else {
-				document.body.innerHTML = "<h2>ID không tồn tại!</h2>";
+				document.getElementById("redirecting").innerHTML = "ID không tồn tại!";
 			}
 		} catch (e) {
-			document.body.innerHTML = "<h2>Lỗi tải dữ liệu!</h2>";
+			document.getElementById("redirecting").innerHTML = "Lỗi tải dữ liệu!";
 		}
 	}
 	checkRedirect();
